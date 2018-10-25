@@ -32,6 +32,12 @@ func main() {
 	if err = worker.InitConfig(configFile); err != nil {
 		goto ERR
 	}
+	if err = worker.InitExecutor(); err != nil {
+		goto ERR
+	}
+	if err = worker.InitScheduler(); err != nil {
+		goto ERR
+	}
 	if err = worker.InitJobMgr(); err != nil {
 		goto ERR
 	}

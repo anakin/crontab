@@ -19,6 +19,11 @@ type JobSchedulePlan struct {
 	NextTime time.Time
 }
 
+type JobExecuteInfo struct {
+	Job      *Job
+	PlanTime time.Time //suppose time
+	RealTime time.Time //real time
+}
 type Response struct {
 	Errno int         `json:"errno"`
 	Msg   string      `json:"msg"`
@@ -28,6 +33,14 @@ type Response struct {
 type JobEvent struct {
 	EventType int
 	Job       *Job
+}
+
+type JobExecuteResult struct {
+	ExecuteInfo *JobExecuteInfo
+	Output      []byte
+	Err         error
+	StartTime   time.Time
+	EndTime     time.Time
 }
 
 func BuildRessponse(errno int, msg string, data interface{}) (resp []byte, err error) {
@@ -76,6 +89,15 @@ func BuildJobSchedulePlan(job *Job) (jobSchedulePlan *JobSchedulePlan, err error
 		Job:      job,
 		Expr:     expr,
 		NextTime: expr.Next(time.Now()),
+	}
+	return
+}
+
+func BuildJobExecuteInfo(jobSchedulePlan *JobSchedulePlan) (jobExecuteInfo *JobExecuteInfo) {
+	jobExecuteInfo = &JobExecuteInfo{
+		Job:      jobSchedulePlan.Job,
+		PlanTime: jobSchedulePlan.NextTime,
+		RealTime: time.Now(),
 	}
 	return
 }
