@@ -147,8 +147,5 @@ func InitApiServer() (err error) {
 	}
 	go httpServer.Serve(listener)
 
-	for {
-		time.Sleep(1 * time.Second)
-	}
 	return
 }
