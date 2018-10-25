@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/anakin/crontab/worker"
 	"runtime"
+	"time"
 )
 
 var (
@@ -33,6 +34,10 @@ func main() {
 	}
 	if err = worker.InitJobMgr(); err != nil {
 		goto ERR
+	}
+
+	for {
+		time.Sleep(1 * time.Second)
 	}
 	return
 ERR:

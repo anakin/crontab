@@ -31,7 +31,7 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		jobName            string
 		jobEvent           *common.JobEvent
 	)
-	if getResp, err = jobMgr.kv.Get(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithPrefix()); err != ni {
+	if getResp, err = jobMgr.kv.Get(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithPrefix()); err != nil {
 		return
 	}
 	for _, kvPair = range getResp.Kvs {
@@ -39,31 +39,31 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		if job, err = common.UnpackJob(kvPair.Value); err == nil {
 
 			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
-			//TODO:
+			G_Scheduler.PushJobEvent(jobEvent)
 		}
 	}
 
 	go func() {
 		watchStartRevision = getResp.Header.Revision + 1
-		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision))
+		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision), clientv3.WithPrefix())
 		for watchResp = range watchChan {
-			for watchEvent = range watchResp {
+			for _, watchEvent = range watchResp.Events {
 				switch watchEvent.Type {
 				case mvccpb.PUT:
-					//TODO:
 					if job, err = common.UnpackJob(watchEvent.Kv.Value); err != nil {
 						continue
 					}
 					jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 				case mvccpb.DELETE:
-					//TODO:
 					jobName = common.ExtractJobName(string(watchEvent.Kv.Key))
 					job = &common.Job{Name: jobName}
 					jobEvent = common.BuildJobEvent(common.JOB_EVENT_DELETE, job)
+					G_Scheduler.PushJobEvent(jobEvent)
 				}
 			}
 		}
 	}()
+	return
 }
 func InitJobMgr() (err error) {
 
