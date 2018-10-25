@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/anakin/crontab/common"
 	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 	"time"
 )
 
@@ -53,7 +54,7 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 		putResp   *clientv3.PutResponse
 		oldJobObj common.Job
 	)
-	jobKey = common.JOB_SAVE_DIR + job.JobName
+	jobKey = common.JOB_SAVE_DIR + job.Name
 	if jobValue, err = json.Marshal(job); err != nil {
 		return
 	}
@@ -91,4 +92,55 @@ func (jobMgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
 		oldJob = &oldJobObj
 	}
 	return
+}
+
+func (jobMgr *JobMgr) ListJobs() (jobList []*common.Job, err error) {
+	var (
+		dirKey  string
+		getResp *clientv3.GetResponse
+		kvPair  *mvccpb.KeyValue
+		job     *common.Job
+	)
+
+	// 任务保存的目录
+	dirKey = common.JOB_SAVE_DIR
+
+	// 获取目录下所有任务信息
+	if getResp, err = jobMgr.kv.Get(context.TODO(), dirKey, clientv3.WithPrefix()); err != nil {
+		return
+	}
+
+	// 初始化数组空间
+	jobList = make([]*common.Job, 0)
+	// len(jobList) == 0
+
+	// 遍历所有任务, 进行反序列化
+	for _, kvPair = range getResp.Kvs {
+		job = &common.Job{}
+		if err = json.Unmarshal(kvPair.Value, job); err != nil {
+			err = nil
+			continue
+		}
+		jobList = append(jobList, job)
+	}
+	return
+}
+
+func (jobMgr *JobMgr) KillJob(name string) (err error) {
+
+	var (
+		jobKey         string
+		leaseGrantResp *clientv3.LeaseGrantResponse
+		leaseId        clientv3.LeaseID
+	)
+	jobKey = common.JOB_KILL_DIR + name
+	if leaseGrantResp, err = jobMgr.lease.Grant(context.TODO(), 1); err != nil {
+		return
+	}
+	leaseId = leaseGrantResp.ID
+	if _, err = jobMgr.kv.Put(context.TODO(), jobKey, "", clientv3.WithLease(leaseId)); err != nil {
+		return
+	}
+	return
+
 }

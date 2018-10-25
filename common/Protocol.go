@@ -3,7 +3,7 @@ package common
 import "encoding/json"
 
 type Job struct {
-	JobName  string `json:"jobName"`
+	Name     string `json:"name"`
 	Command  string `json:"command"`
 	CronExpr string `json:"cronExpr"`
 }
