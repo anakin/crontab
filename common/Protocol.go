@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorhill/cronexpr"
 	"strings"
@@ -20,9 +21,11 @@ type JobSchedulePlan struct {
 }
 
 type JobExecuteInfo struct {
-	Job      *Job
-	PlanTime time.Time //suppose time
-	RealTime time.Time //real time
+	Job        *Job
+	PlanTime   time.Time //suppose time
+	RealTime   time.Time //real time
+	CancelCtx  context.Context
+	CancelFunc context.CancelFunc
 }
 type Response struct {
 	Errno int         `json:"errno"`
@@ -43,7 +46,30 @@ type JobExecuteResult struct {
 	EndTime     time.Time
 }
 
-func BuildRessponse(errno int, msg string, data interface{}) (resp []byte, err error) {
+type JobLog struct {
+	JobName      string `json:"jobName" bson:"jobName"`
+	Command      string `json:"command" bson:"command"`
+	Err          string `json:"err" bson:"err"`
+	Output       string `json:"output" bson:"output"`
+	PlanTime     int64  `json:"planTime" bson:"planTime"`
+	ScheduleTime int64  `json:"scheduleTime" bson:"scheduleTime"`
+	StartTime    int64  `json:"startTime" bson:"startTime"`
+	EndTime      int64  `json:"endTime" bson:"endTime"`
+}
+
+type LogBatch struct {
+	Logs []interface{}
+}
+
+type LogFilter struct {
+	JobName string `bson:"jobName"`
+}
+
+type SortLogByStartTime struct {
+	SortOrder int `bson:"startTime"`
+}
+
+func BuildResponse(errno int, msg string, data interface{}) (resp []byte, err error) {
 
 	var (
 		response Response
@@ -70,7 +96,12 @@ func UnpackJob(value []byte) (ret *Job, err error) {
 func ExtractJobName(jobKey string) string {
 	return strings.TrimPrefix(jobKey, JOB_SAVE_DIR)
 }
-
+func ExtractKillName(killerKey string) string {
+	return strings.TrimPrefix(killerKey, JOB_KILL_DIR)
+}
+func ExtractWorkerIP(regKey string) string {
+	return strings.TrimPrefix(regKey, JOB_WORKER_DIR)
+}
 func BuildJobEvent(eventType int, job *Job) (jobEvent *JobEvent) {
 	return &JobEvent{
 		EventType: eventType,
@@ -99,5 +130,6 @@ func BuildJobExecuteInfo(jobSchedulePlan *JobSchedulePlan) (jobExecuteInfo *JobE
 		PlanTime: jobSchedulePlan.NextTime,
 		RealTime: time.Now(),
 	}
+	jobExecuteInfo.CancelCtx, jobExecuteInfo.CancelFunc = context.WithCancel(context.TODO())
 	return
 }

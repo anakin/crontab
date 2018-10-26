@@ -19,6 +19,35 @@ var (
 	G_jobMgr *JobMgr
 )
 
+func (jobMgr *JobMgr) watchKiller() {
+	var (
+		getResp            *clientv3.GetResponse
+		watchStartRevision int64
+		watchChan          clientv3.WatchChan
+		watchResp          clientv3.WatchResponse
+		watchEvent         *clientv3.Event
+		jobName            string
+		job                *common.Job
+		jobEvent           *common.JobEvent
+	)
+	go func() {
+		watchStartRevision = getResp.Header.Revision + 1
+		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_KILL_DIR, clientv3.WithPrefix())
+		for watchResp = range watchChan {
+			for _, watchEvent = range watchResp.Events {
+				switch watchEvent.Type {
+				case mvccpb.PUT:
+					jobName = common.ExtractKillName(string(watchEvent.Kv.Key))
+					job = &common.Job{Name: jobName}
+					jobEvent = common.BuildJobEvent(common.JOB_EVENT_KILL, job)
+					G_Scheduler.PushJobEvent(jobEvent)
+				case mvccpb.DELETE:
+
+				}
+			}
+		}
+	}()
+}
 func (jobMgr *JobMgr) watchJobs() (err error) {
 	var (
 		getResp            *clientv3.GetResponse

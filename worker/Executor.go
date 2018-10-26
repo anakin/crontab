@@ -1,8 +1,8 @@
 package worker
 
 import (
-	"context"
 	"github.com/anakin/crontab/common"
+	"math/rand"
 	"os/exec"
 	"time"
 )
@@ -33,6 +33,10 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 		jobLock = G_jobMgr.CreateJobLock(info.Job.Name)
 
 		result.StartTime = time.Now()
+
+		//random sleep for worker balance
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+
 		err = jobLock.TryLock()
 		defer jobLock.UnLock()
 		if err != nil {
@@ -40,7 +44,7 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 			result.EndTime = time.Now()
 		} else {
 			result.StartTime = time.Now()
-			cmd = exec.CommandContext(context.TODO(), "/bin/bash", "-c", info.Job.Command)
+			cmd = exec.CommandContext(info.CancelCtx, "/bin/bash", "-c", info.Job.Command)
 			output, err = cmd.CombinedOutput()
 			result.EndTime = time.Now()
 			result.Output = output
