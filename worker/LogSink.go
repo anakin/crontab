@@ -1,10 +1,10 @@
 package worker
 
 import (
+	"anakin-crontab/common"
 	"context"
-	"github.com/anakin/crontab/common"
-	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
@@ -67,8 +67,13 @@ func InitLogSink() (err error) {
 	var (
 		client *mongo.Client
 	)
-	if client, err = mongo.Connect(context.TODO(), G_config.MongodbUri, clientopt.
-		ConnectTimeout(time.Duration(G_config.EtcdDialTimeOut)*time.Millisecond)); err != nil {
+	t:=time.Duration(G_config.EtcdDialTimeOut)*time.Millisecond
+	opt:=options.ClientOptions{
+		ConnectTimeout:&t,
+	}
+	opt.ApplyURI(G_config.MongodbUri)
+
+	if client, err = mongo.Connect(context.TODO(), &opt); err != nil {
 		return
 	}
 

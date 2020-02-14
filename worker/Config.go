@@ -18,21 +18,20 @@ var (
 	G_config *Config
 )
 
-func InitConfig(filename string) (err error) {
+func InitConfig(filename string) error {
 
 	var (
-		content []byte
-		conf    Config
+		conf Config
 	)
-	//fmt.Println("filename", filename)
-	if content, err = ioutil.ReadFile(filename); err != nil {
-		return
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
 	}
-	if err = json.Unmarshal(content, &conf); err != nil {
-		return
+	if err := json.Unmarshal(content, &conf); err != nil {
+		return err
 	}
 
 	G_config = &conf
 	//fmt.Println(conf)
-	return
+	return nil
 }

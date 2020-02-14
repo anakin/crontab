@@ -1,11 +1,10 @@
 package master
 
 import (
+	"anakin-crontab/common"
 	"context"
-	"github.com/anakin/crontab/common"
-	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
-	"github.com/mongodb/mongo-go-driver/mongo/findopt"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
@@ -22,8 +21,13 @@ func InitLogMgr() (err error) {
 	var (
 		client *mongo.Client
 	)
-	if client, err = mongo.Connect(context.TODO(), G_config.MongodbUri,
-		clientopt.ConnectTimeout(time.Duration(G_config.EtcdDialTimeOut)*time.Millisecond)); err != nil {
+	t:=time.Duration(G_config.EtcdDialTimeOut) *time.Millisecond
+	otps:=options.ClientOptions{
+		ConnectTimeout: &t,
+	}
+	otps.ApplyURI(G_config.MongodbUri)
+	if client, err = mongo.Connect(context.TODO(), &otps,
+		); err != nil {
 		return
 	}
 
@@ -46,8 +50,11 @@ func (logMgr *LogMgr) ListLog(jobName string, skip int, limit int) (logArr []*co
 		JobName: jobName,
 	}
 	logSort = &common.SortLogByStartTime{SortOrder: -1}
-	if cursor, err = logMgr.logCollection.Find(context.TODO(), filter, findopt.Sort(logSort),
-		findopt.Skip(int64(skip)), findopt.Limit(int64(limit))); err != nil {
+	opt:=options.Find()
+	opt.SetSort(logSort)
+	opt.SetLimit(int64(limit))
+	opt.SetSkip(int64(skip))
+	if cursor, err = logMgr.logCollection.Find(context.TODO(), filter, opt); err != nil {
 		return
 	}
 	for cursor.Next(context.TODO()) {

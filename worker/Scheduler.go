@@ -1,8 +1,8 @@
 package worker
 
 import (
+	"anakin-crontab/common"
 	"fmt"
-	"github.com/anakin/crontab/common"
 	"time"
 )
 
@@ -57,7 +57,7 @@ func (scheduler *Scheduler) TryStartJob(jobSchedulePlan *common.JobSchedulePlan)
 	scheduler.jobExecutingTable[jobSchedulePlan.Job.Name] = jobExecuteInfo
 
 	//exec
-	G_executor.ExecuteJob(jobExecuteInfo)
+	GExecutor.ExecuteJob(jobExecuteInfo)
 
 }
 
@@ -104,7 +104,7 @@ func (scheduler *Scheduler) scheduleLoop() {
 			scheduler.handleJobEvent(jobEvent)
 		case <-scheduleTimer.C:
 		case jobResult = <-scheduler.jobResultChan:
-			scheduler.handleJobEvent(jobResult)
+			scheduler.handleJobEvent(jobEvent)
 		}
 		scheduleAfter = scheduler.TrySchedule()
 		scheduleTimer.Reset(scheduleAfter)

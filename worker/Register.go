@@ -1,8 +1,8 @@
 package worker
 
 import (
+	"anakin-crontab/common"
 	"context"
-	"github.com/anakin/crontab/common"
 	"go.etcd.io/etcd/clientv3"
 	"net"
 	"time"

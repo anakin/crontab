@@ -1,9 +1,9 @@
 package main
 
 import (
+	"anakin-crontab/worker"
 	"flag"
 	"fmt"
-	"github.com/anakin/crontab/worker"
 	"runtime"
 	"time"
 )
@@ -51,7 +51,6 @@ func main() {
 	for {
 		time.Sleep(1 * time.Second)
 	}
-	return
 ERR:
 	fmt.Println(err)
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/anakin/crontab/master"
+	"anakin-crontab/master"
 	"runtime"
 	"time"
 )
@@ -23,9 +23,7 @@ func initEnv() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 func main() {
-	var (
-		err error
-	)
+	var err error
 	initEnv()
 
 	initArgs()
@@ -48,7 +46,6 @@ func main() {
 		time.Sleep(1 * time.Second)
 	}
 
-	return
 ERR:
 	fmt.Println(err)
 }

@@ -1,8 +1,8 @@
 package master
 
 import (
+	"anakin-crontab/common"
 	"context"
-	"github.com/anakin/crontab/common"
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/mvcc/mvccpb"
 	"time"
@@ -21,7 +21,7 @@ var (
 func (workMgr *WorkerMgr) ListWorkers() (workerArr []string, err error) {
 	var (
 		getResp  *clientv3.GetResponse
-		kv       mvccpb.KeyValue
+		kv       *mvccpb.KeyValue
 		workerIP string
 	)
 

@@ -1,8 +1,8 @@
 package worker
 
 import (
+	"anakin-crontab/common"
 	"context"
-	"github.com/anakin/crontab/common"
 	"go.etcd.io/etcd/clientv3"
 )
 
@@ -15,16 +15,15 @@ type JobLock struct {
 	isLocked   bool
 }
 
-func InitJobLock(jobName string, kv clientv3.KV, lease clientv3.Lease) (jobLock *JobLock) {
-	jobLock = &JobLock{
+func InitJobLock(jobName string, kv clientv3.KV, lease clientv3.Lease) *JobLock {
+	return &JobLock{
 		kv:      kv,
 		lease:   lease,
 		jobName: jobName,
 	}
-	return
 }
 
-func (jobLock *JobLock) TryLock() (err error) {
+func (jobLock *JobLock) TryLock() error {
 	var (
 		leaseGrantResp *clientv3.LeaseGrantResponse
 		leaseId        clientv3.LeaseID
@@ -35,8 +34,9 @@ func (jobLock *JobLock) TryLock() (err error) {
 		lockKey        string
 		txnResp        *clientv3.TxnResponse
 	)
-	if leaseGrantResp, err = jobLock.lease.Grant(context.TODO(), 5); err != nil {
-		return
+	leaseGrantResp, err := jobLock.lease.Grant(context.TODO(), 5)
+	if err != nil {
+		return err
 	}
 
 	cancelCtx, cancelFunc = context.WithCancel(context.TODO())
@@ -74,11 +74,11 @@ func (jobLock *JobLock) TryLock() (err error) {
 	jobLock.leaseId = leaseId
 	jobLock.cancelFunc = cancelFunc
 	jobLock.isLocked = true
-	return
+	return nil
 FAIL:
 	cancelFunc()
 	jobLock.lease.Revoke(context.TODO(), leaseId)
-	return
+	return nil
 }
 
 func (jobLock *JobLock) UnLock() {

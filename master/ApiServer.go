@@ -1,8 +1,8 @@
 package master
 
 import (
+	"anakin-crontab/common"
 	"encoding/json"
-	"github.com/anakin/crontab/common"
 	"net"
 	"net/http"
 	"strconv"
@@ -25,7 +25,7 @@ func handleJobDelete(resp http.ResponseWriter, req *http.Request) {
 		oldJob *common.Job
 		bytes  []byte
 	)
-	if err = req.ParseForm(); err != nil {
+	if err := req.ParseForm(); err != nil {
 		goto ERR
 	}
 	name = req.PostForm.Get("name")
@@ -151,7 +151,7 @@ ERR:
 	}
 }
 
-func handleWorkerList(resp http.ResponseWriter, req http.Request) {
+func handleWorkerList(resp http.ResponseWriter, req *http.Request) {
 	var (
 		workerArr []string
 		err       error

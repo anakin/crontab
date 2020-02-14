@@ -5,5 +5,5 @@
   "etcdEndpoints":["http://localhost:2379"],
   "etcdDialTimeout":5000,
   "mongodbUri":"mongodb://localhost:27017",
-  "mongodbConnectTimeout":5000,
+  "mongodbConnectTimeout":5000
 }

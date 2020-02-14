@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/anakin/crontab/common"
+	"anakin-crontab/common"
 	"math/rand"
 	"os/exec"
 	"time"
@@ -11,7 +11,7 @@ type Executor struct {
 }
 
 var (
-	G_executor *Executor
+	GExecutor *Executor
 )
 
 func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
@@ -55,6 +55,6 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 }
 
 func InitExecutor() (err error) {
-	G_executor = &Executor{}
+	GExecutor = &Executor{}
 	return
 }

@@ -1,9 +1,9 @@
 package master
 
 import (
+	"anakin-crontab/common"
 	"context"
 	"encoding/json"
-	"github.com/anakin/crontab/common"
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/mvcc/mvccpb"
 	"time"
