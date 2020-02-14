@@ -17,48 +17,37 @@ var (
 	G_logMgr *LogMgr
 )
 
-func InitLogMgr() (err error) {
-	var (
-		client *mongo.Client
-	)
-	t:=time.Duration(G_config.EtcdDialTimeOut) *time.Millisecond
-	otps:=options.ClientOptions{
+func InitLogMgr() error {
+	t := time.Duration(G_config.EtcdDialTimeOut) * time.Millisecond
+	otps := options.ClientOptions{
 		ConnectTimeout: &t,
 	}
 	otps.ApplyURI(G_config.MongodbUri)
-	if client, err = mongo.Connect(context.TODO(), &otps,
-		); err != nil {
-		return
+	client, err := mongo.Connect(context.TODO(), &otps)
+	if err != nil {
+		return err
 	}
 
 	G_logMgr = &LogMgr{
 		client:        client,
 		logCollection: client.Database("cron").Collection("log"),
 	}
-	return
+	return nil
 }
 
 func (logMgr *LogMgr) ListLog(jobName string, skip int, limit int) (logArr []*common.JobLog, err error) {
-	var (
-		filter  *common.LogFilter
-		logSort *common.SortLogByStartTime
-		cursor  mongo.Cursor
-		jobLog  *common.JobLog
-	)
 	logArr = make([]*common.JobLog, 0)
-	filter = &common.LogFilter{
+	filter := &common.LogFilter{
 		JobName: jobName,
 	}
-	logSort = &common.SortLogByStartTime{SortOrder: -1}
-	opt:=options.Find()
-	opt.SetSort(logSort)
-	opt.SetLimit(int64(limit))
-	opt.SetSkip(int64(skip))
-	if cursor, err = logMgr.logCollection.Find(context.TODO(), filter, opt); err != nil {
+	logSort := &common.SortLogByStartTime{SortOrder: -1}
+	opt := options.Find().SetSort(logSort).SetLimit(int64(limit)).SetSkip(int64(skip))
+	cursor, err := logMgr.logCollection.Find(context.TODO(), filter, opt)
+	if err != nil {
 		return
 	}
 	for cursor.Next(context.TODO()) {
-		jobLog = &common.JobLog{}
+		jobLog := &common.JobLog{}
 		if err = cursor.Decode(jobLog); err != nil {
 			continue
 		}

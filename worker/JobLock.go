@@ -25,23 +25,19 @@ func InitJobLock(jobName string, kv clientv3.KV, lease clientv3.Lease) *JobLock 
 
 func (jobLock *JobLock) TryLock() error {
 	var (
-		leaseGrantResp *clientv3.LeaseGrantResponse
-		leaseId        clientv3.LeaseID
-		cancelCtx      context.Context
-		cancelFunc     context.CancelFunc
-		keepRespChan   <-chan *clientv3.LeaseKeepAliveResponse
-		txn            clientv3.Txn
-		lockKey        string
-		txnResp        *clientv3.TxnResponse
+		txn     clientv3.Txn
+		lockKey string
+		txnResp *clientv3.TxnResponse
 	)
 	leaseGrantResp, err := jobLock.lease.Grant(context.TODO(), 5)
 	if err != nil {
 		return err
 	}
 
-	cancelCtx, cancelFunc = context.WithCancel(context.TODO())
-	leaseId = leaseGrantResp.ID
-	if keepRespChan, err = jobLock.lease.KeepAlive(cancelCtx, leaseId); err != nil {
+	cancelCtx, cancelFunc := context.WithCancel(context.TODO())
+	leaseId := leaseGrantResp.ID
+	keepRespChan, err := jobLock.lease.KeepAlive(cancelCtx, leaseId)
+	if err != nil {
 		goto FAIL
 	}
 	go func() {

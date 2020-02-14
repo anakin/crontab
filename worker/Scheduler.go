@@ -61,19 +61,16 @@ func (scheduler *Scheduler) TryStartJob(jobSchedulePlan *common.JobSchedulePlan)
 
 }
 
-func (scheduler *Scheduler) TrySchedule() (scheduleAfter time.Duration) {
+func (scheduler *Scheduler) TrySchedule() time.Duration {
 
 	var (
-		jobPlan  *common.JobSchedulePlan
-		now      time.Time
 		nearTime *time.Time
 	)
 	if len(scheduler.jobPlanTable) == 0 {
-		scheduleAfter = 1 * time.Second
-		return
+		return  1 * time.Second
 	}
-	now = time.Now()
-	for _, jobPlan = range scheduler.jobPlanTable {
+	now := time.Now()
+	for _, jobPlan := range scheduler.jobPlanTable {
 		if jobPlan.NextTime.Before(now) || jobPlan.NextTime.Equal(now) {
 			//TODO:run command
 			scheduler.TryStartJob(jobPlan)
@@ -84,27 +81,20 @@ func (scheduler *Scheduler) TrySchedule() (scheduleAfter time.Duration) {
 		}
 	}
 	//sleep time
-	scheduleAfter = (*nearTime).Sub(now)
-	return
+	return (*nearTime).Sub(now)
 }
 
 func (scheduler *Scheduler) scheduleLoop() {
 
-	var (
-		jobEvent      *common.JobEvent
-		scheduleAfter time.Duration
-		scheduleTimer *time.Timer
-		jobResult     *common.JobExecuteResult
-	)
-	scheduleAfter = scheduler.TrySchedule()
-	scheduleTimer = time.NewTimer(scheduleAfter)
+	scheduleAfter := scheduler.TrySchedule()
+	scheduleTimer := time.NewTimer(scheduleAfter)
 	for {
 		select {
-		case jobEvent = <-scheduler.jobEventChan:
+		case jobEvent := <-scheduler.jobEventChan:
 			scheduler.handleJobEvent(jobEvent)
 		case <-scheduleTimer.C:
-		case jobResult = <-scheduler.jobResultChan:
-			scheduler.handleJobEvent(jobEvent)
+		case jobResult := <-scheduler.jobResultChan:
+			scheduler.handleJobResult(jobResult)
 		}
 		scheduleAfter = scheduler.TrySchedule()
 		scheduleTimer.Reset(scheduleAfter)
@@ -112,13 +102,10 @@ func (scheduler *Scheduler) scheduleLoop() {
 }
 
 func (scheduler *Scheduler) handleJobResult(jobResult *common.JobExecuteResult) {
-	var (
-		jobLog *common.JobLog
-	)
 	delete(scheduler.jobExecutingTable, jobResult.ExecuteInfo.Job.Name)
 
 	if jobResult.Err != common.ERR_LOCK_ALREADY_REQUIED {
-		jobLog = &common.JobLog{
+		jobLog := &common.JobLog{
 			JobName:      jobResult.ExecuteInfo.Job.Name,
 			Command:      jobResult.ExecuteInfo.Job.Command,
 			Output:       string(jobResult.Output),

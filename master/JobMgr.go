@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/mvcc/mvccpb"
 	"time"
 )
 
@@ -19,7 +18,7 @@ var (
 	G_jobMgr *JobMgr
 )
 
-func InitJobMgr() (err error) {
+func InitJobMgr() error {
 
 	var (
 		config clientv3.Config
@@ -33,8 +32,9 @@ func InitJobMgr() (err error) {
 		DialTimeout: time.Duration(G_config.EtcdDialTimeOut) * time.Millisecond,
 	}
 
-	if client, err = clientv3.New(config); err != nil {
-		return
+	client, err := clientv3.New(config)
+	if err != nil {
+		return err
 	}
 
 	kv = clientv3.KV(client)
@@ -44,7 +44,7 @@ func InitJobMgr() (err error) {
 		kv:     kv,
 		lease:  lease,
 	}
-	return
+	return nil
 }
 func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 
@@ -94,53 +94,43 @@ func (jobMgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
 	return
 }
 
-func (jobMgr *JobMgr) ListJobs() (jobList []*common.Job, err error) {
-	var (
-		dirKey  string
-		getResp *clientv3.GetResponse
-		kvPair  *mvccpb.KeyValue
-		job     *common.Job
-	)
+func (jobMgr *JobMgr) ListJobs() ([]*common.Job, error) {
 
 	// 任务保存的目录
-	dirKey = common.JOB_SAVE_DIR
+	dirKey := common.JOB_SAVE_DIR
 
+	jobList := make([]*common.Job, 0)
 	// 获取目录下所有任务信息
-	if getResp, err = jobMgr.kv.Get(context.TODO(), dirKey, clientv3.WithPrefix()); err != nil {
-		return
+	getResp, err := jobMgr.kv.Get(context.TODO(), dirKey, clientv3.WithPrefix())
+	if err != nil {
+		return jobList, err
 	}
 
 	// 初始化数组空间
-	jobList = make([]*common.Job, 0)
 	// len(jobList) == 0
 
 	// 遍历所有任务, 进行反序列化
-	for _, kvPair = range getResp.Kvs {
-		job = &common.Job{}
+	for _, kvPair := range getResp.Kvs {
+		job := &common.Job{}
 		if err = json.Unmarshal(kvPair.Value, job); err != nil {
 			err = nil
 			continue
 		}
 		jobList = append(jobList, job)
 	}
-	return
+	return jobList, nil
 }
 
-func (jobMgr *JobMgr) KillJob(name string) (err error) {
+func (jobMgr *JobMgr) KillJob(name string) error {
 
-	var (
-		jobKey         string
-		leaseGrantResp *clientv3.LeaseGrantResponse
-		leaseId        clientv3.LeaseID
-	)
-	jobKey = common.JOB_KILL_DIR + name
-	if leaseGrantResp, err = jobMgr.lease.Grant(context.TODO(), 1); err != nil {
-		return
+	jobKey := common.JOB_KILL_DIR + name
+	leaseGrantResp, err := jobMgr.lease.Grant(context.TODO(), 1)
+	if err != nil {
+		return err
 	}
-	leaseId = leaseGrantResp.ID
+	leaseId := leaseGrantResp.ID
 	if _, err = jobMgr.kv.Put(context.TODO(), jobKey, "", clientv3.WithLease(leaseId)); err != nil {
-		return
+		return err
 	}
-	return
-
+	return nil
 }
